@@ -27,7 +27,7 @@ export const authMiddleware = (req: AuthRequest, res: Response, next: NextFuncti
     const expiresIn = decoded.exp - now;
 
     // Si expira en menos de 1 día, renovamos
-    if (expiresIn < 24 * 60 * 60) {
+    if (expiresIn < 5 * 24 * 60 * 60) {
       const newToken = signToken({ id: decoded.id, username: decoded.username });
       res.setHeader('x-new-token', newToken);
     }
