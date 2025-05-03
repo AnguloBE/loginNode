@@ -2,15 +2,15 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import { pool } from '../config/db';
 import { signToken } from '../utils/jwt';
-import { Persona } from '../types/persona';
 
 export const register = async (req: Request, res: Response): Promise<void> => {
-  const { username, password, role } = req.body;
+  const { nombres, apellidos, telefono, password, rol } = req.body;
+
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
     await pool.query(
-      'INSERT INTO users (username, password, role) VALUES ($1, $2, $3)',
-      [username, hashedPassword, role]
+      'INSERT INTO usuarios (nombres, apellidos, telefono, password_hash, rol) VALUES ($1, $2, $3, $4, $5)',
+      [nombres, apellidos, telefono, hashedPassword, rol]
     );
     res.status(201).send('Usuario registrado');
   } catch (error) {
@@ -20,22 +20,24 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 };
 
 export const login = async (req: Request, res: Response): Promise<void> => {
-  const { username, password } = req.body;
+  const { telefono, password } = req.body;
   try {
-    const result = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
-    const persona: Persona = result.rows[0];
-    if (!persona) {
-      res.status(400).send('Usuario no encontrado');
+    const result = await pool.query('SELECT id_usuario, password_hash, rol FROM usuarios WHERE telefono = $1', [telefono]);
+
+    if(result.rows.length === 0) {
+      res.status(400).json({ succes: false, message: 'telefono no encontrado'});
       return;
     }
 
-    const validPassword = await bcrypt.compare(password, persona.password);
+    const { id_usuario, password_hash, rol } = result.rows[0];
+
+    const validPassword = await bcrypt.compare(password, password_hash);
     if (!validPassword) {
       res.status(400).send('Contraseña incorrecta');
       return;
     }
 
-    const token = signToken({ id: persona.id, username: persona.username });
+    const token = signToken( id_usuario );
     res.json({ token });
   } catch (error) {
     console.error(error);
@@ -43,6 +45,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
+/*
 export const getPersonas = async (_req: Request, res: Response): Promise<void> => {
   try {
     const result = await pool.query('SELECT id, username, password, role FROM users');
@@ -51,4 +54,4 @@ export const getPersonas = async (_req: Request, res: Response): Promise<void> =
     console.error(error);
     res.status(500).send('Error obteniendo personas');
   }
-};
+};*/

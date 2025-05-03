@@ -3,7 +3,6 @@ import { verifyToken, signToken } from '../utils/jwt';
 
 interface DecodedToken {
   id: number;
-  username: string;
   exp: number;
 }
 
@@ -28,7 +27,7 @@ export const authMiddleware = (req: AuthRequest, res: Response, next: NextFuncti
 
     // Si expira en menos de 1 día, renovamos
     if (expiresIn < 5 * 24 * 60 * 60) {
-      const newToken = signToken({ id: decoded.id, username: decoded.username });
+      const newToken = signToken(decoded.id );
       res.setHeader('x-new-token', newToken);
     }
 
